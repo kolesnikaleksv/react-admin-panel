@@ -1,2 +1,9 @@
 <?php
-echo "hello world!";
+$htmlfiles = glob("../../*.html");
+$response = [];
+foreach($htmlfiles as $file) {
+  // echo basename($file);
+  array_push($response, basename($file));
+};
+
+echo json_encode($response);

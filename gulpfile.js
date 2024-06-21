@@ -68,7 +68,6 @@ gulp.task("watch", () => {
   gulp.watch("./app/scss/**/*.scss", gulp.parallel("build-sass"));
   gulp.watch("./app/api/**.*", gulp.parallel("copy-api"));
   gulp.watch("./app/assets/**.*", gulp.parallel("copy-assets"));
-
 })
 
 gulp.task("build", gulp.parallel("copy-html", "build-js", "build-sass", "copy-api", "copy-assets"));

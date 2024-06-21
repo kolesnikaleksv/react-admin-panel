@@ -1,4 +1,8 @@
 import $ from 'jquery';
 
-$('h1').fadeOut();
-console.log(' helloo')
+$.get("./api", data => {
+  data.forEach(file => {
+    $("body").append(`<h1>${file}</h1>`)
+  })
+
+}, "JSON");

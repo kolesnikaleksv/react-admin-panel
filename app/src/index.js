@@ -1,23 +1,5 @@
-import $ from 'jquery';
+import React from "react";
+import ReactDOM from 'react-dom';
+import Editor from "./components/editor/editor";
 
-function getPageList() {
-  $("h1").remove();
-  $.get("./api", data => {
-    data.forEach((file, i)=> {
-      $("body").append(`<h1>${file}</h1>`)
-    })
-  }, "JSON");
-}
-
-getPageList();
-
-$('button').on('click', () => {
-  $.post('./api/createNewFile.php', {
-    name: $('input').val()
-  }, () => {
-    getPageList();
-  })
-  .fail(() => {
-    alert("The page already exist!")
-  })
-})
+ReactDOM.render( <Editor />, document.getElementById('root'));

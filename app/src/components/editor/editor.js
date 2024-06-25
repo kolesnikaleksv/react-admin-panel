@@ -1,3 +1,4 @@
+import "../../helpers/iframeLoader.js";
 import axios from "axios";
 import React, {Component} from "react";
 
@@ -5,6 +6,7 @@ export default class Editor extends Component {
   constructor() {
     super();
 
+    this.currentPage = "index.html";
     this.state = {
       pageList: [],
       pageName: ''
@@ -12,9 +14,22 @@ export default class Editor extends Component {
   }
 
   componentDidMount() {
-    this.loadPageList()
+    this.init(this.currentPage)
   }
   
+  init(page) {
+    this.iframe = document.querySelector('iframe');
+    this.open(page);
+    this.loadPageList();
+  }
+
+  open(page) {
+    this.currentPage = `../${page}`;
+    this.iframe.load(this.currentPage, () => {
+    console.log(this.currentPage);
+    })
+  }
+
   loadPageList() {
     axios
       .get('./api')
@@ -42,23 +57,24 @@ export default class Editor extends Component {
   }
 
   render() {
-    const {pageList, pageName} = this.state;
-    const pages = pageList.map((page, key) => {
-      return(
-        <h1 key={key}>
-          {page}
-          <a 
-            onClick={() => this.delePage(page)}
-            href="#">(X)</a>
-        </h1>
-      )
-    })
+    // const {pageList, pageName} = this.state;
+    // const pages = pageList.map((page, key) => {
+    //   return(
+    //     <h1 key={key}>
+    //       {page}
+    //       <a 
+    //         onClick={() => this.delePage(page)}
+    //         href="#">(X)</a>
+    //     </h1>
+    //   )
+    // })
     return (
-      <>
-        <input value={pageName} type="text" onChange={(e) => this.setState({pageName: e.target.value})}/>
-        <button onClick={() => this.createNewFile()}>Create new html file</button>
-        {pages}
-      </>
+      // <>
+      //   <input value={pageName} type="text" onChange={(e) => this.setState({pageName: e.target.value})}/>
+      //   <button onClick={() => this.createNewFile()}>Create new html file</button>
+      //   {pages}
+      // </>
+      <iframe src={this.currentPage}></iframe>
     )
   }
 }

@@ -24,10 +24,10 @@ export default class Editor extends Component {
   }
 
   open(page) {
-    this.currentPage = `../${page}?rnd=${Math.floor(Math.random() * 10)}`;
+    this.currentPage = page;
 
     axios
-      .get(`../${page}`)                         // got our page like string
+      .get(`../${page}?rnd=${Math.floor(Math.random() * 10)}`)                         // got our page like string
       .then(res => this.parseStrToDOM(res.data)) // parse page/string and rewrite to DOM obj
       .then(this.wrapTextNode)                   // adding custom tag to each text node
       .then(dom => {                             //copied clear copy to virtual dom
@@ -38,7 +38,16 @@ export default class Editor extends Component {
       .then(html => axios.post("./api/saveTempPage.php", {html})) //send our page to temporary file
       .then(() => this.iframe.load("../temp.html"))               //load our page into our iframe
       .then(() => this.enableEditing())                           //turn on contentEditable to = true
-      
+  }
+
+  save() {
+    const newDom = this.virtualDom.cloneNode(this.virtualDom);
+    this.unwrapTextNodes(newDom);
+    // now we need to save our data and send it to server.
+    // we can't send DOM obj to server and we should rewrite our dom to string
+    const html = this.serializedDomToString(newDom);
+    axios
+      .post("./api/savePage.php", {pageName: this.currentPage, html})
   }
 
   enableEditing() {
@@ -92,6 +101,12 @@ export default class Editor extends Component {
     return serializer.serializeToString(dom);
   }
 
+  unwrapTextNodes(dom) {
+    dom.body.querySelectorAll("text-node").forEach(element => {
+      element.parentNode.replaceChild(element.firstChild, element);
+    })
+  }
+
   loadPageList() {
     axios
       .get('./api')
@@ -131,12 +146,16 @@ export default class Editor extends Component {
     //   )
     // })
     return (
+      <>
+        <button style={{zIndex: 100, padding: "20px", background: "green",cursor: "pointer", position: "absolute", borderRadius: "8px", opacity: 0.5, top: "100px"}} onClick={() => this.save()}>Save</button>
+        <iframe src={this.currentPage}></iframe>
+      </>
       // <>
       //   <input value={pageName} type="text" onChange={(e) => this.setState({pageName: e.target.value})}/>
       //   <button onClick={() => this.createNewFile()}>Create new html file</button>
       //   {pages}
       // </>
-      <iframe src={this.currentPage}></iframe>
+      // <iframe src={this.currentPage}></iframe>
     )
   }
 }

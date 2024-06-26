@@ -24,9 +24,44 @@ export default class Editor extends Component {
   }
 
   open(page) {
-    this.currentPage = `../${page}`;
-    this.iframe.load(this.currentPage, () => {
-    const body = this.iframe.contentDocument.body;
+    this.currentPage = `../${page}?rnd=${Math.floor(Math.random() * 10)}`;
+
+    axios
+      .get(`../${page}`)                         // got our page like string
+      .then(res => this.parseStrToDOM(res.data)) // parse page/string and rewrite to DOM obj
+      .then(this.wrapTextNode)                   // adding custom tag to each text node
+      .then(dom => {                             //copied clear copy to virtual dom
+        this.virtualDom = dom;
+        return dom;
+      })
+      .then(this.serializedDomToString)                           //rewrite our DOM obj to string
+      .then(html => axios.post("./api/saveTempPage.php", {html})) //send our page to temporary file
+      .then(() => this.iframe.load("../temp.html"))               //load our page into our iframe
+      .then(() => this.enableEditing())                           //turn on contentEditable to = true
+      
+  }
+
+  enableEditing() {
+    this.iframe.contentDocument.body.querySelectorAll("text-editor").forEach(element => {
+      element.contentEditable = "true";
+      element.addEventListener('input', () => {
+        this.onTextEdit(element);
+      })
+    })
+  }
+
+  onTextEdit(element) { //syncronization with the crear virtual DOM
+    const id = element.getAttribute("nodeId");
+    this.virtualDom.querySelector(`[nodeId="${id}"]`).innerHTML = element.innerHTML; // we send what we change to clear virtual DOM
+  }
+  
+  parseStrToDOM(str) {
+    const parser = new DOMParser();
+    return parser.parseFromString(str, "text/html");
+  }
+
+  wrapTextNode(dom) { //we go deep into each last text node
+    const body = dom.body;
     let textNodes = [];
 
     function recursy(element) {
@@ -42,19 +77,25 @@ export default class Editor extends Component {
 
     recursy(body);
 
-    textNodes.forEach(node => {
-      const wrapper = this.iframe.contentDocument.createElement("text-editor");
+    textNodes.forEach((node, i) => {
+      const wrapper = dom.createElement("text-editor");
       node.parentNode.replaceChild(wrapper, node);
-      wrapper.appendChild(node);
-      wrapper.contentEditable = "true";
+      wrapper.appendChild(node);              // adding custom tag "text-editor" to each text node
+      wrapper.setAttribute("nodeId", i)       // To have chanse to compare both DOM obj(Real and virtual) we have to add id to each custom tag
     })
-    })
+
+    return dom;
+  }
+
+  serializedDomToString(dom) {
+    const serializer = new XMLSerializer();
+    return serializer.serializeToString(dom);
   }
 
   loadPageList() {
     axios
       .get('./api')
-      .then(res => this.setState({ pageList: res.data })) 
+      .then(res => this.setState({ pageList: res.data }))
   };
 
   createNewFile() {

@@ -1,6 +1,7 @@
 import "../../helpers/iframeLoader.js";
 import axios from "axios";
 import React, {Component} from "react";
+import DOMhelper from "../../helpers/dom-helper.js";
 
 export default class Editor extends Component {
   constructor() {
@@ -28,13 +29,13 @@ export default class Editor extends Component {
 
     axios
       .get(`../${page}?rnd=${Math.floor(Math.random() * 10)}`)                         // got our page like string
-      .then(res => this.parseStrToDOM(res.data)) // parse page/string and rewrite to DOM obj
-      .then(this.wrapTextNode)                   // adding custom tag to each text node
+      .then(res => DOMhelper.parseStrToDOM(res.data)) // parse page/string and rewrite to DOM obj
+      .then(DOMhelper.wrapTextNode)                   // adding custom tag to each text node
       .then(dom => {                             //copied clear copy to virtual dom
         this.virtualDom = dom;
         return dom;
       })
-      .then(this.serializedDomToString)                           //rewrite our DOM obj to string
+      .then(DOMhelper.serializedDomToString)                           //rewrite our DOM obj to string
       .then(html => axios.post("./api/saveTempPage.php", {html})) //send our page to temporary file
       .then(() => this.iframe.load("../temp.html"))               //load our page into our iframe
       .then(() => this.enableEditing())                           //turn on contentEditable to = true
@@ -42,10 +43,10 @@ export default class Editor extends Component {
 
   save() {
     const newDom = this.virtualDom.cloneNode(this.virtualDom);
-    this.unwrapTextNodes(newDom);
+    DOMhelper.unwrapTextNodes(newDom);
     // now we need to save our data and send it to server.
     // we can't send DOM obj to server and we should rewrite our dom to string
-    const html = this.serializedDomToString(newDom);
+    const html = DOMhelper.serializedDomToString(newDom);
     axios
       .post("./api/savePage.php", {pageName: this.currentPage, html})
   }
@@ -62,49 +63,6 @@ export default class Editor extends Component {
   onTextEdit(element) { //syncronization with the crear virtual DOM
     const id = element.getAttribute("nodeId");
     this.virtualDom.querySelector(`[nodeId="${id}"]`).innerHTML = element.innerHTML; // we send what we change to clear virtual DOM
-  }
-  
-  parseStrToDOM(str) {
-    const parser = new DOMParser();
-    return parser.parseFromString(str, "text/html");
-  }
-
-  wrapTextNode(dom) { //we go deep into each last text node
-    const body = dom.body;
-    let textNodes = [];
-
-    function recursy(element) {
-      element.childNodes.forEach(node => {
-        
-        if(node.nodeName === "#text" && node.nodeValue.replace(/\s+/g, "").length > 0) {
-          textNodes.push(node);
-        } else {
-          recursy(node);
-        }
-      })
-    }
-
-    recursy(body);
-
-    textNodes.forEach((node, i) => {
-      const wrapper = dom.createElement("text-editor");
-      node.parentNode.replaceChild(wrapper, node);
-      wrapper.appendChild(node);              // adding custom tag "text-editor" to each text node
-      wrapper.setAttribute("nodeId", i)       // To have chanse to compare both DOM obj(Real and virtual) we have to add id to each custom tag
-    })
-
-    return dom;
-  }
-
-  serializedDomToString(dom) {
-    const serializer = new XMLSerializer();
-    return serializer.serializeToString(dom);
-  }
-
-  unwrapTextNodes(dom) {
-    dom.body.querySelectorAll("text-node").forEach(element => {
-      element.parentNode.replaceChild(element.firstChild, element);
-    })
   }
 
   loadPageList() {

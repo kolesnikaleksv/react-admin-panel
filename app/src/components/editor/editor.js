@@ -3,6 +3,13 @@ import axios from "axios";
 import React, {Component} from "react";
 import DOMhelper from "../../helpers/dom-helper.js";
 import EditorText from "../editor-text/editor-text.js";
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogTitle from '@mui/material/DialogTitle';
+import Alert from '@mui/material/Alert';
 
 export default class Editor extends Component {
   constructor() {
@@ -11,14 +18,24 @@ export default class Editor extends Component {
     this.currentPage = "index.html";
     this.state = {
       pageList: [],
-      pageName: ''
+      pageName: "",
+      dialog: false,
+      alert: false,
+      message: ""
     }
+    this.timer = null;
   }
 
   componentDidMount() {
-    this.init(this.currentPage)
+    this.init(this.currentPage);
   }
   
+  componentWillUnmount() {
+    if (this.timer) {
+      clearTimeout(this.timer);
+    }
+  }
+
   init(page) {
     this.iframe = document.querySelector('iframe');
     this.open(page);
@@ -51,6 +68,8 @@ export default class Editor extends Component {
     const html = DOMhelper.serializedDomToString(newDom);
     axios
       .post("./api/savePage.php", {pageName: this.currentPage, html})
+      .then(() => this.handleAlertOpen("success"))
+      .catch(() => this.handleAlertOpen('warning'))
   }
 
   enableEditing() {
@@ -102,29 +121,70 @@ export default class Editor extends Component {
       })
   }
 
+  handleClickOpen() {
+    this.setState({ dialog: true });
+  }
+
+  handleClose() {
+    this.setState({ dialog: false });
+  };
+  
+  handleAlertOpen(status) {
+    if(status === 'success') {
+      this.setState({alert: 'success', message: "Your changes has changed successfully!"})
+      const timer = setTimeout(() => {
+        this.setState({alert: false})
+      }, 3000)
+    } else if (status === 'warning') {
+      this.setState({alert: 'warning', message: "Something went wrong!"})
+      const timer = setTimeout(() => {
+        this.setState({alert: false})
+      }, 3000)
+    }
+  };
+
   render() {
-    // const {pageList, pageName} = this.state;
-    // const pages = pageList.map((page, key) => {
-    //   return(
-    //     <h1 key={key}>
-    //       {page}
-    //       <a 
-    //         onClick={() => this.delePage(page)}
-    //         href="#">(X)</a>
-    //     </h1>
-    //   )
-    // })
+   
     return (
       <>
-        <button style={{zIndex: 100, padding: "20px", background: "green",cursor: "pointer", position: "absolute", borderRadius: "8px", opacity: 0.5, top: "100px"}} onClick={() => this.save()}>Save</button>
         <iframe src={this.currentPage}></iframe>
+
+        <div className="panel">
+          {this.state.alert ? <Alert className="alert-success" variant="outlined" severity={this.state.alert}>
+            {this.state.message}
+          </Alert> : <></>}
+          <Button variant="outlined" onClick={() => this.handleClickOpen()}>
+            Publish changes
+          </Button>
+        </div>
+       
+        <Dialog
+          open={this.state.dialog}
+          onClose={() => this.handleClose()}
+          aria-labelledby="alert-dialog-title"
+          aria-describedby="alert-dialog-description"
+          >
+          <DialogTitle id="alert-dialog-title">
+            {"Saving changes"}
+          </DialogTitle>
+          <DialogContent>
+            <DialogContentText id="alert-dialog-description">
+              Are you sure that you want to save changes?
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => {this.handleClose()}}>Disagree</Button>
+            <Button 
+              onClick={() => {
+                this.handleClose();
+                this.save();
+              }} 
+              autoFocus>
+              Agree
+            </Button>
+          </DialogActions>
+        </Dialog>
       </>
-      // <>
-      //   <input value={pageName} type="text" onChange={(e) => this.setState({pageName: e.target.value})}/>
-      //   <button onClick={() => this.createNewFile()}>Create new html file</button>
-      //   {pages}
-      // </>
-      // <iframe src={this.currentPage}></iframe>
     )
   }
 }

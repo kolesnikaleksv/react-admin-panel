@@ -25,7 +25,7 @@ export default class Editor extends Component {
     }
     this.timer = null;
   }
-
+// hello
   componentDidMount() {
     this.init(this.currentPage);
   }

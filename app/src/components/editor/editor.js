@@ -3,6 +3,7 @@ import axios from "axios";
 import React, {Component} from "react";
 import DOMhelper from "../../helpers/dom-helper.js";
 import EditorText from "../editor-text/editor-text.js";
+import Spinner from "../spinner/spinner.js";
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
@@ -21,11 +22,15 @@ export default class Editor extends Component {
       pageName: "",
       dialog: false,
       alert: false,
-      message: ""
+      message: "",
+      loading: true
     }
     this.timer = null;
+    this.isLoading = this.isLoading.bind(this);
+    this.isLoaded = this.isLoaded.bind(this);
+
   }
-// hello
+
   componentDidMount() {
     this.init(this.currentPage);
   }
@@ -38,11 +43,11 @@ export default class Editor extends Component {
 
   init(page) {
     this.iframe = document.querySelector('iframe');
-    this.open(page);
+    this.open(page, this.isLoaded);
     this.loadPageList();
   }
 
-  open(page) {
+  open(page, cb) {
     this.currentPage = page;
 
     axios
@@ -58,9 +63,11 @@ export default class Editor extends Component {
       .then(() => this.iframe.load("../temp.html"))               //load our page into our iframe
       .then(() => this.enableEditing())                           //turn on contentEditable to = true
       .then(() => this.injectStyles())
+      .then(cb)
   }
 
   save() {
+    this.isLoading();
     const newDom = this.virtualDom.cloneNode(this.virtualDom);
     DOMhelper.unwrapTextNodes(newDom);
     // now we need to save our data and send it to server.
@@ -70,6 +77,7 @@ export default class Editor extends Component {
       .post("./api/savePage.php", {pageName: this.currentPage, html})
       .then(() => this.handleAlertOpen("success"))
       .catch(() => this.handleAlertOpen('warning'))
+      .finally(this.isLoaded)
   }
 
   enableEditing() {
@@ -143,15 +151,32 @@ export default class Editor extends Component {
     }
   };
 
+  isLoading() {
+    this.setState({
+      loading: true
+    })
+  }
+
+  isLoaded() {
+    this.setState({
+      loading: false
+    })
+  }
+
   render() {
-   
+    const {alert, message, dialog, loading} = this.state;
+    let spinner = loading ? <Spinner acitve /> : <Spinner />;
+    
     return (
       <>
         <iframe src={this.currentPage}></iframe>
 
+        {spinner}
+
         <div className="panel">
-          {this.state.alert ? <Alert className="alert-success" variant="outlined" severity={this.state.alert}>
-            {this.state.message}
+          <Spinner />
+          {this.state.alert ? <Alert className="alert-success" variant="outlined" severity={alert}>
+            {message}
           </Alert> : <></>}
           <Button variant="outlined" onClick={() => this.handleClickOpen()}>
             Publish changes
@@ -159,7 +184,7 @@ export default class Editor extends Component {
         </div>
        
         <Dialog
-          open={this.state.dialog}
+          open={dialog}
           onClose={() => this.handleClose()}
           aria-labelledby="alert-dialog-title"
           aria-describedby="alert-dialog-description"

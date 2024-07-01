@@ -5,12 +5,9 @@ import DOMhelper from "../../helpers/dom-helper.js";
 import EditorText from "../editor-text/editor-text.js";
 import Spinner from "../spinner/spinner.js";
 import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
 import Alert from '@mui/material/Alert';
+import ConfirmModal from "../confirm-modal/ConfirmModal.js";
+import ChooseModal from "../choose-modal/ChooseModal.js";
 
 export default class Editor extends Component {
   constructor() {
@@ -23,16 +20,18 @@ export default class Editor extends Component {
       dialog: false,
       alert: false,
       message: "",
-      loading: true
+      loading: true,
+      openPage: false
     }
     this.timer = null;
     this.isLoading = this.isLoading.bind(this);
     this.isLoaded = this.isLoaded.bind(this);
-
+    this.save = this.save.bind(this);
+    this.init = this.init.bind(this);
   }
 
   componentDidMount() {
-    this.init(this.currentPage);
+    this.init(null, this.currentPage);
   }
   
   componentWillUnmount() {
@@ -41,7 +40,11 @@ export default class Editor extends Component {
     }
   }
 
-  init(page) {
+  init(e, page) {
+    if(e) {
+      e.preventDefault();
+    }
+    this.isLoading();
     this.iframe = document.querySelector('iframe');
     this.open(page, this.isLoaded);
     this.loadPageList();
@@ -60,7 +63,8 @@ export default class Editor extends Component {
       })
       .then(DOMhelper.serializedDomToString)                           //rewrite our DOM obj to string
       .then(html => axios.post("./api/saveTempPage.php", {html})) //send our page to temporary file
-      .then(() => this.iframe.load("../temp.html"))               //load our page into our iframe
+      .then(() => this.iframe.load("../wertqwer_34wsdfs.html"))              //load our page into our iframe
+      .then(() => axios.post("./api/deleteTempPage.php"))
       .then(() => this.enableEditing())                           //turn on contentEditable to = true
       .then(() => this.injectStyles())
       .then(cb)
@@ -105,7 +109,7 @@ export default class Editor extends Component {
 
   loadPageList() {
     axios
-      .get('./api')
+      .get('./api/pageList.php')
       .then(res => this.setState({ pageList: res.data }))
   };
 
@@ -120,7 +124,7 @@ export default class Editor extends Component {
     })
   }
 
-  delePage(page) {
+  deletePage(page) {
     axios.post("./api/deletePage.php", {"name": page})
       .then(res => console.log(res))
       .then(this.loadPageList())
@@ -163,8 +167,16 @@ export default class Editor extends Component {
     })
   }
 
+  handlePageOpen() {
+    this.setState({openPage: true})
+  }
+
+  handlePageClose() {
+    this.setState({openPage: false})
+  }
+
   render() {
-    const {alert, message, dialog, loading} = this.state;
+    const {alert, message, dialog, loading, openPage, pageList} = this.state;
     let spinner = loading ? <Spinner acitve /> : <Spinner />;
     
     return (
@@ -178,37 +190,27 @@ export default class Editor extends Component {
           {this.state.alert ? <Alert className="alert-success" variant="outlined" severity={alert}>
             {message}
           </Alert> : <></>}
+          <Button sx={{mr:3}} variant="outlined" onClick={() => this.handlePageOpen()}>
+            Open
+          </Button>
           <Button variant="outlined" onClick={() => this.handleClickOpen()}>
             Publish changes
           </Button>
         </div>
        
-        <Dialog
-          open={dialog}
-          onClose={() => this.handleClose()}
-          aria-labelledby="alert-dialog-title"
-          aria-describedby="alert-dialog-description"
-          >
-          <DialogTitle id="alert-dialog-title">
-            {"Saving changes"}
-          </DialogTitle>
-          <DialogContent>
-            <DialogContentText id="alert-dialog-description">
-              Are you sure that you want to save changes?
-            </DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => {this.handleClose()}}>Disagree</Button>
-            <Button 
-              onClick={() => {
-                this.handleClose();
-                this.save();
-              }} 
-              autoFocus>
-              Agree
-            </Button>
-          </DialogActions>
-        </Dialog>
+        <ChooseModal 
+          closeModal={() => this.handlePageClose()}
+          method={() => this.save()}
+          data={pageList}
+          openPage={openPage}
+          redirect={this.init}
+          />
+
+        <ConfirmModal 
+          closeModal={() => this.handleClose()}
+          method={() => this.save()}
+          dialog={dialog}
+          />
       </>
     )
   }

@@ -8,6 +8,7 @@ import ConfirmModal from "../confirm-modal/ConfirmModal.js";
 import ChooseModal from "../choose-modal/ChooseModal.js";
 import Panel from "../panel/Panel.js";
 import BackupModal from "../backupModal/BuckupModal.js";
+import AlertModal from "../alertModal/AlertModal.js";
 
 export default class Editor extends Component {
   constructor() {
@@ -23,13 +24,16 @@ export default class Editor extends Component {
       loading: true,
       openPage: false,
       backupList: [],
-      openCloseBackup: false
+      openCloseBackup: false,
+      alertModal: false
     }
     this.timer = null;
     this.isLoading = this.isLoading.bind(this);
     this.isLoaded = this.isLoaded.bind(this);
+    this.loadBackupsList = this.loadBackupsList.bind(this);
     this.save = this.save.bind(this);
     this.init = this.init.bind(this);
+    this.restoreBackup = this.restoreBackup.bind(this)
   }
 
   componentDidMount() {
@@ -128,25 +132,15 @@ export default class Editor extends Component {
       })
     }))
   }
-
-  createNewFile() {
-    axios.post('./api/createNewFile.php', {
-      name: this.state.pageName
-    })
-    .then(() => this.setState({pageName: ''}))
-    .then(this.loadPageList())
-    .catch(() => {
-      alert("The page already exist!")
-    })
-  }
-
-  deletePage(page) {
-    axios.post("./api/deletePage.php", {"name": page})
-      .then(res => console.log(res))
-      .then(this.loadPageList())
-      .catch(() => {
-        alert("There are no such a page!")
-      })
+  
+  restoreBackup(e, backup) {
+    if(e) {
+     e.preventDefault(); 
+    }
+    this.isLoading();
+    axios
+      .post("./api/restoreBackup.php", {"page": this.currentPage, "file": backup})
+      .then(() => this.open(this.currentPage, this.isLoaded))
   }
 
   handleDialogOpen() {
@@ -200,7 +194,7 @@ export default class Editor extends Component {
   }
   
   render() {
-    const {alert, message, dialog, loading, openPage, pageList, openCloseBackup, backupList} = this.state;
+    const {alert, message, dialog, loading, openPage, pageList, openCloseBackup, backupList, alertModal} = this.state;
     let spinner = loading ? <Spinner acitve /> : <Spinner />;
     
     return (
@@ -214,7 +208,8 @@ export default class Editor extends Component {
           openPage={() => this.handlePageOpen()}
           openDialog={() => this.handleDialogOpen()}
           openCloseBackup={() => this.openBackupModal()}
-          message={message}/>
+          message={message}
+          alert={alert}/>
        
         <ChooseModal 
           closeModal={() => this.handlePageClose()}
@@ -229,7 +224,7 @@ export default class Editor extends Component {
           method={() => this.save()}
           data={backupList}
           openPage={openCloseBackup}
-          redirect={this.init}
+          redirect={this.restoreBackup}
           />
 
         <ConfirmModal 

@@ -4,10 +4,10 @@ import React, {Component} from "react";
 import DOMhelper from "../../helpers/dom-helper.js";
 import EditorText from "../editor-text/editor-text.js";
 import Spinner from "../spinner/spinner.js";
-import Button from '@mui/material/Button';
-import Alert from '@mui/material/Alert';
 import ConfirmModal from "../confirm-modal/ConfirmModal.js";
 import ChooseModal from "../choose-modal/ChooseModal.js";
+import Panel from "../panel/Panel.js";
+import BackupModal from "../backupModal/BuckupModal.js";
 
 export default class Editor extends Component {
   constructor() {
@@ -21,7 +21,9 @@ export default class Editor extends Component {
       alert: false,
       message: "",
       loading: true,
-      openPage: false
+      openPage: false,
+      backupList: [],
+      openCloseBackup: false
     }
     this.timer = null;
     this.isLoading = this.isLoading.bind(this);
@@ -48,6 +50,7 @@ export default class Editor extends Component {
     this.iframe = document.querySelector('iframe');
     this.open(page, this.isLoaded);
     this.loadPageList();
+    this.loadBackupsList();
   }
 
   open(page, cb) {
@@ -68,20 +71,24 @@ export default class Editor extends Component {
       .then(() => this.enableEditing())                           //turn on contentEditable to = true
       .then(() => this.injectStyles())
       .then(cb)
+
+    this.loadBackupsList();
   }
 
-  save() {
+  async save() {
     this.isLoading();
     const newDom = this.virtualDom.cloneNode(this.virtualDom);
     DOMhelper.unwrapTextNodes(newDom);
     // now we need to save our data and send it to server.
     // we can't send DOM obj to server and we should rewrite our dom to string
     const html = DOMhelper.serializedDomToString(newDom);
-    axios
+    await axios
       .post("./api/savePage.php", {pageName: this.currentPage, html})
       .then(() => this.handleAlertOpen("success"))
       .catch(() => this.handleAlertOpen('warning'))
       .finally(this.isLoaded)
+
+    this.loadBackupsList();
   }
 
   enableEditing() {
@@ -113,6 +120,15 @@ export default class Editor extends Component {
       .then(res => this.setState({ pageList: res.data }))
   };
 
+  loadBackupsList() {
+    axios
+      .get("./backups/backups.json")
+      .then(res => this.setState({backupList: res.data.filter(backup => {
+        return backup.page === this.currentPage;
+      })
+    }))
+  }
+
   createNewFile() {
     axios.post('./api/createNewFile.php', {
       name: this.state.pageName
@@ -133,7 +149,7 @@ export default class Editor extends Component {
       })
   }
 
-  handleClickOpen() {
+  handleDialogOpen() {
     this.setState({ dialog: true });
   }
 
@@ -175,34 +191,44 @@ export default class Editor extends Component {
     this.setState({openPage: false})
   }
 
+  openBackupModal() {
+    this.setState({openCloseBackup: true});
+  }
+
+  closeBackupModal() {
+    this.setState({openCloseBackup: false});
+  }
+  
   render() {
-    const {alert, message, dialog, loading, openPage, pageList} = this.state;
+    const {alert, message, dialog, loading, openPage, pageList, openCloseBackup, backupList} = this.state;
     let spinner = loading ? <Spinner acitve /> : <Spinner />;
     
     return (
       <>
-        <iframe src={this.currentPage}></iframe>
+        <iframe src=""></iframe>
 
         {spinner}
 
-        <div className="panel">
-          <Spinner />
-          {this.state.alert ? <Alert className="alert-success" variant="outlined" severity={alert}>
-            {message}
-          </Alert> : <></>}
-          <Button sx={{mr:3}} variant="outlined" onClick={() => this.handlePageOpen()}>
-            Open
-          </Button>
-          <Button variant="outlined" onClick={() => this.handleClickOpen()}>
-            Publish changes
-          </Button>
-        </div>
+        <Panel 
+          state={alert} 
+          openPage={() => this.handlePageOpen()}
+          openDialog={() => this.handleDialogOpen()}
+          openCloseBackup={() => this.openBackupModal()}
+          message={message}/>
        
         <ChooseModal 
           closeModal={() => this.handlePageClose()}
           method={() => this.save()}
           data={pageList}
           openPage={openPage}
+          redirect={this.init}
+          />
+
+        <BackupModal 
+          closeModal={() => this.closeBackupModal()}
+          method={() => this.save()}
+          data={backupList}
+          openPage={openCloseBackup}
           redirect={this.init}
           />
 

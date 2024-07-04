@@ -7,7 +7,7 @@ export default class DOMhelper {
   static wrapTextNode(dom) { //we go deep into each last text node
     const body = dom.body;
     let textNodes = [];
-
+    
     function recursy(element) {
       element.childNodes.forEach(node => {
         
@@ -37,8 +37,21 @@ export default class DOMhelper {
   }
 
   static unwrapTextNodes(dom) {
-    dom.body.querySelectorAll("text-node").forEach(element => {
+    dom.body.querySelectorAll("text-editor").forEach(element => {
       element.parentNode.replaceChild(element.firstChild, element);
+    })
+  }
+
+  static wrapImages(dom) {
+    dom.body.querySelectorAll('img').forEach((img, i) => {
+      img.setAttribute('editableimgid', i)
+    })
+    return dom;
+  }
+
+  static unWrapImages(dom) {
+    dom.body.querySelectorAll('[editableimgid]').forEach((img, i) => {
+      img.removeAttribute('editableimgid')
     })
   }
 }

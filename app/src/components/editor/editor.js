@@ -9,6 +9,7 @@ import ChooseModal from "../choose-modal/ChooseModal.js";
 import Panel from "../panel/Panel.js";
 import BackupModal from "../backupModal/BuckupModal.js";
 import EditorMeta from "../editor-meta/EditorMeta.js";
+import EditorImages from "../editor-images/EditorImages.js";
 
 export default class Editor extends Component {
   constructor() {
@@ -65,6 +66,7 @@ export default class Editor extends Component {
       .get(`../${page}?rnd=${Math.floor(Math.random() * 10)}`)      // got our page like string
       .then(res => DOMhelper.parseStrToDOM(res.data)) // parse page/string and rewrite to DOM obj
       .then(DOMhelper.wrapTextNode)                   // adding custom tag to each text node
+      .then(DOMhelper.wrapImages)                   // adding custom tag to each img tag
       .then(dom => {                             //copied clear copy to virtual dom
         this.virtualDom = dom;
         return dom;
@@ -84,6 +86,7 @@ export default class Editor extends Component {
     this.isLoading();
     const newDom = this.virtualDom.cloneNode(this.virtualDom);
     DOMhelper.unwrapTextNodes(newDom);
+    DOMhelper.unWrapImages(newDom);
     // now we need to save our data and send it to server.
     // we can't send DOM obj to server and we should rewrite our dom to string
     const html = DOMhelper.serializedDomToString(newDom);
@@ -102,6 +105,12 @@ export default class Editor extends Component {
       const virtualElement = this.virtualDom.body.querySelector(`[nodeId="${id}"]`);
       new EditorText(element, virtualElement)
     })
+    this.iframe.contentDocument.body.querySelectorAll("[editableimgid]").forEach(element => {
+      const id = element.getAttribute("editableimgid");
+      const virtualElement = this.virtualDom.body.querySelector(`[editableimgid="${id}"]`);
+      new EditorImages(element, virtualElement);
+    })
+    
   }
 
   injectStyles() {
@@ -113,6 +122,10 @@ export default class Editor extends Component {
       }
       text-editor:focus {
         outline: 3px solid red;
+        outline-offset: 8px;
+      }
+      [editableimgid]:hover {
+        outline: 3px solid orange;
         outline-offset: 8px;
       }
     `;
@@ -196,7 +209,7 @@ export default class Editor extends Component {
   openMetaModal() {
     this.setState({openCloseMetaModal: true});
   }
-  
+
   closeMetaModal() {
     this.setState({openCloseMetaModal: false});
   }
@@ -209,6 +222,7 @@ export default class Editor extends Component {
     return (
       <>
         <iframe src=""></iframe>
+        <input id="img-upload" type="file" accept="image/*" style={{display: 'none'}} ></input>
 
         {spinner}
 

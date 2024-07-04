@@ -8,7 +8,7 @@ import ConfirmModal from "../confirm-modal/ConfirmModal.js";
 import ChooseModal from "../choose-modal/ChooseModal.js";
 import Panel from "../panel/Panel.js";
 import BackupModal from "../backupModal/BuckupModal.js";
-import AlertModal from "../alertModal/AlertModal.js";
+import EditorMeta from "../editor-meta/EditorMeta.js";
 
 export default class Editor extends Component {
   constructor() {
@@ -25,7 +25,8 @@ export default class Editor extends Component {
       openPage: false,
       backupList: [],
       openCloseBackup: false,
-      alertModal: false
+      alertModal: false,
+      openCloseMetaModal: false
     }
     this.timer = null;
     this.isLoading = this.isLoading.bind(this);
@@ -61,7 +62,7 @@ export default class Editor extends Component {
     this.currentPage = page;
 
     axios
-      .get(`../${page}?rnd=${Math.floor(Math.random() * 10)}`)                         // got our page like string
+      .get(`../${page}?rnd=${Math.floor(Math.random() * 10)}`)      // got our page like string
       .then(res => DOMhelper.parseStrToDOM(res.data)) // parse page/string and rewrite to DOM obj
       .then(DOMhelper.wrapTextNode)                   // adding custom tag to each text node
       .then(dom => {                             //copied clear copy to virtual dom
@@ -188,15 +189,23 @@ export default class Editor extends Component {
   openBackupModal() {
     this.setState({openCloseBackup: true});
   }
-
   closeBackupModal() {
     this.setState({openCloseBackup: false});
   }
+
+  openMetaModal() {
+    this.setState({openCloseMetaModal: true});
+  }
+  
+  closeMetaModal() {
+    this.setState({openCloseMetaModal: false});
+  }
+  
   
   render() {
-    const {alert, message, dialog, loading, openPage, pageList, openCloseBackup, backupList, alertModal} = this.state;
+    const {alert, message, dialog, loading, openPage, pageList, openCloseBackup, backupList, alertModal, openCloseMetaModal} = this.state;
     let spinner = loading ? <Spinner acitve /> : <Spinner />;
-    
+   
     return (
       <>
         <iframe src=""></iframe>
@@ -209,7 +218,9 @@ export default class Editor extends Component {
           openDialog={() => this.handleDialogOpen()}
           openCloseBackup={() => this.openBackupModal()}
           message={message}
-          alert={alert}/>
+          alert={alert}
+          openMetaModal={() => this.openMetaModal()}
+          />
        
         <ChooseModal 
           closeModal={() => this.handlePageClose()}
@@ -232,6 +243,16 @@ export default class Editor extends Component {
           method={() => this.save()}
           dialog={dialog}
           />
+
+        {
+          this.virtualDom ?
+          <EditorMeta 
+          openCloseMetaModal={openCloseMetaModal} 
+          closeMetaModal={() => this.closeMetaModal()}
+          virtualDom={this.virtualDom}
+          />:
+          false
+        }
       </>
     )
   }

@@ -13,34 +13,28 @@ const ConfirmModal = ({dialog, closeModal, saveData, modal, target, method }) =>
   };
   return (
     <Dialog
-    open={dialog}
-    // onClose={() => this.handleClose()}
-    onClose={closeModal}
-    aria-labelledby="alert-dialog-title"
-    aria-describedby="alert-dialog-description"
-    >
-    <DialogTitle id="alert-dialog-title">
-      {"Saving changes"}
-    </DialogTitle>
-    <DialogContent>
-      <DialogContentText id="alert-dialog-description">
-        Are you sure that you want to save changes?
-      </DialogContentText>
-    </DialogContent>
-    <DialogActions>
-      {/* <Button onClick={() => {this.handleClose()}}>Disagree</Button> */}
-      <Button onClick={closeModal}>Disagree</Button>
-      <Button 
-        // onClick={() => {
-        //   this.handleClose();
-        //   this.save();
-        // }} 
-        onClick={handleAgreeClick}
-        autoFocus>
-        Agree
-      </Button>
-    </DialogActions>
-  </Dialog>
+      open={dialog}
+      onClose={closeModal}
+      aria-labelledby="alert-dialog-title"
+      aria-describedby="alert-dialog-description"
+      >
+      <DialogTitle id="alert-dialog-title">
+        {"Saving changes"}
+      </DialogTitle>
+      <DialogContent>
+        <DialogContentText id="alert-dialog-description">
+          Are you sure that you want to save changes?
+        </DialogContentText>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={closeModal}>Disagree</Button>
+        <Button 
+          onClick={handleAgreeClick}
+          autoFocus>
+          Agree
+        </Button>
+      </DialogActions>
+    </Dialog>
   )
 }
 

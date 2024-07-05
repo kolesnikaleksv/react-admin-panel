@@ -120,8 +120,7 @@ export default class EditorMeta extends Component {
             Are you sure that you want to save changes?
           </DialogContentText>
           <form>
-            <TextField 
-              data-title
+            <TextField
               id="meta-title"
               label="Enter meta title" 
               variant="outlined" 
@@ -131,7 +130,6 @@ export default class EditorMeta extends Component {
               onChange={(e) => this.onValueChange(e)}
               />
             <TextField
-              data-key
               id="meta-key"
               style={{ width: "400px", margin: "5px" }}
               type="text"
@@ -143,7 +141,6 @@ export default class EditorMeta extends Component {
               onChange={(e) => this.onValueChange(e)}
             />
             <TextField
-              data-descr
               id="meta-descr"
               style={{ width: "400px", margin: "5px" }}
               type="text"

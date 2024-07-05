@@ -10,6 +10,7 @@ import Panel from "../panel/Panel.js";
 import BackupModal from "../backupModal/BuckupModal.js";
 import EditorMeta from "../editor-meta/EditorMeta.js";
 import EditorImages from "../editor-images/EditorImages.js";
+import Login from "../login/Login.js";
 
 export default class Editor extends Component {
   constructor() {
@@ -27,7 +28,8 @@ export default class Editor extends Component {
       backupList: [],
       openCloseBackup: false,
       alertModal: false,
-      openCloseMetaModal: false
+      openCloseMetaModal: false,
+      auth: false
     }
     this.timer = null;
     this.isLoading = this.isLoading.bind(this);
@@ -37,10 +39,41 @@ export default class Editor extends Component {
     this.init = this.init.bind(this);
     this.restoreBackup = this.restoreBackup.bind(this);
     this.handleAlertOpen = this.handleAlertOpen.bind(this);
+    this.login = this.login.bind(this);
+    this.checkAuth = this.checkAuth.bind(this);
   }
 
   componentDidMount() {
-    this.init(null, this.currentPage);
+    this.checkAuth();
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if(this.state.auth !== prevState.auth) {
+      this.init(null, this.currentPage);
+    }
+  }
+
+  checkAuth() {
+    axios
+      .get("./api/checkAuth.php")
+      .then(res => {
+        console.log(res.data)
+        this.setState({
+          auth: res.data.auth
+        })
+      })
+  }
+
+  login(pass) {
+    if(pass.length > 5) {
+      axios
+        .post("./api/login.php", {"password": pass})
+        .then(res => {
+          this.setState({
+            auth: res.data.auth
+          })
+        })
+    }
   }
   
   componentWillUnmount() {
@@ -53,11 +86,13 @@ export default class Editor extends Component {
     if(e) {
       e.preventDefault();
     }
-    this.isLoading();
-    this.iframe = document.querySelector('iframe');
-    this.open(page, this.isLoaded);
-    this.loadPageList();
-    this.loadBackupsList();
+    if(this.state.auth) {
+      this.isLoading();
+      this.iframe = document.querySelector('iframe');
+      this.open(page, this.isLoaded);
+      this.loadPageList();
+      this.loadBackupsList();
+    }
   }
 
   open(page, cb) {
@@ -217,11 +252,15 @@ export default class Editor extends Component {
   
   
   render() {
-    const {alert, message, dialog, loading, openPage, pageList, openCloseBackup, backupList, alertModal, openCloseMetaModal} = this.state;
+    const {alert, message, dialog, loading, openPage, pageList, openCloseBackup, backupList, alertModal, openCloseMetaModal, auth} = this.state;
     let spinner = loading ? <Spinner acitve /> : <Spinner />;
+
+    if(!auth) {
+      return <Login login={this.login} />;
+    }
    
     return (
-      <>
+      <> 
         <iframe src=""></iframe>
         <input id="img-upload" type="file" accept="image/*" style={{display: 'none'}} ></input>
 

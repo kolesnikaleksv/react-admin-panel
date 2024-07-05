@@ -35,7 +35,8 @@ export default class Editor extends Component {
     this.loadBackupsList = this.loadBackupsList.bind(this);
     this.save = this.save.bind(this);
     this.init = this.init.bind(this);
-    this.restoreBackup = this.restoreBackup.bind(this)
+    this.restoreBackup = this.restoreBackup.bind(this);
+    this.handleAlertOpen = this.handleAlertOpen.bind(this);
   }
 
   componentDidMount() {
@@ -108,7 +109,7 @@ export default class Editor extends Component {
     this.iframe.contentDocument.body.querySelectorAll("[editableimgid]").forEach(element => {
       const id = element.getAttribute("editableimgid");
       const virtualElement = this.virtualDom.body.querySelector(`[editableimgid="${id}"]`);
-      new EditorImages(element, virtualElement);
+      new EditorImages(element, virtualElement, this.isLoading, this.isLoaded, this.handleAlertOpen);
     })
     
   }

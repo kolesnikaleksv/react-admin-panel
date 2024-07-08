@@ -74,4 +74,10 @@ iframe{
     flex-direction: column;
     row-gap: 20px;
   }
+
+  .login-error {
+    display: block;
+    color: red;
+    margin-top: 10px;
+  }
 }

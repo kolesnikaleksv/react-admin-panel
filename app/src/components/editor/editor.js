@@ -11,6 +11,7 @@ import BackupModal from "../backupModal/BuckupModal.js";
 import EditorMeta from "../editor-meta/EditorMeta.js";
 import EditorImages from "../editor-images/EditorImages.js";
 import Login from "../login/Login.js";
+import LogoutModal from "../logoutModal/logoutModal.js";
 
 export default class Editor extends Component {
   constructor() {
@@ -29,7 +30,10 @@ export default class Editor extends Component {
       openCloseBackup: false,
       alertModal: false,
       openCloseMetaModal: false,
-      auth: false
+      auth: false,
+      loginError: false,
+      loginLengthError: false,
+      openCloseLogout: false
     }
     this.timer = null;
     this.isLoading = this.isLoading.bind(this);
@@ -40,6 +44,7 @@ export default class Editor extends Component {
     this.restoreBackup = this.restoreBackup.bind(this);
     this.handleAlertOpen = this.handleAlertOpen.bind(this);
     this.login = this.login.bind(this);
+    this.logout = this.logout.bind(this);
     this.checkAuth = this.checkAuth.bind(this);
   }
 
@@ -70,12 +75,26 @@ export default class Editor extends Component {
         .post("./api/login.php", {"password": pass})
         .then(res => {
           this.setState({
-            auth: res.data.auth
+            auth: res.data.auth,
+            loginError: !res.data.auth,
+            loginLengthError: false
           })
         })
+    } else {
+      this.setState({
+        loginError: false,
+        loginLengthError: true
+      })
     }
   }
   
+  logout() {
+    axios
+      .get("./api/logout.php")
+      .then(() => {
+        window.location.replace("/");
+      })
+  }
   componentWillUnmount() {
     if (this.timer) {
       clearTimeout(this.timer);
@@ -249,14 +268,28 @@ export default class Editor extends Component {
   closeMetaModal() {
     this.setState({openCloseMetaModal: false});
   }
+
+  openLogoutModal() {
+    this.setState({openCloseLogout: true});
+  }
+
+  closeLogoutModal() {
+    this.setState({openCloseLogout: false});
+  }
   
   
   render() {
-    const {alert, message, dialog, loading, openPage, pageList, openCloseBackup, backupList, alertModal, openCloseMetaModal, auth} = this.state;
+    const {alert, message, 
+      dialog, loading, 
+      openPage, pageList, 
+      openCloseBackup, backupList, 
+      alertModal, openCloseMetaModal, 
+      auth, loginError, 
+      loginLengthError, openCloseLogout} = this.state;
     let spinner = loading ? <Spinner acitve /> : <Spinner />;
 
     if(!auth) {
-      return <Login login={this.login} />;
+      return <Login login={this.login} lengthErr={loginLengthError} logErr={loginError} />;
     }
    
     return (
@@ -274,6 +307,7 @@ export default class Editor extends Component {
           message={message}
           alert={alert}
           openMetaModal={() => this.openMetaModal()}
+          openLogout={() => this.openLogoutModal()}
           />
        
         <ChooseModal 
@@ -296,6 +330,13 @@ export default class Editor extends Component {
           closeModal={() => this.handleClose()}
           method={() => this.save()}
           dialog={dialog}
+          logout={"logout"}
+          />
+          
+        <LogoutModal
+          closeModal={() => this.closeLogoutModal()} 
+          openCloseLogout={openCloseLogout}
+          logout={() => this.logout()}
           />
 
         {

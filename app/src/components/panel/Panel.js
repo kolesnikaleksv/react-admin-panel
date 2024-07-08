@@ -3,7 +3,7 @@ import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
 import Spinner from "../spinner/spinner";
 
-const Panel = ({alert, message, openPage, openDialog, openCloseBackup, openMetaModal}) => {
+const Panel = ({alert, message, openPage, openDialog, openCloseBackup, openMetaModal, openLogout}) => {
   return (
     <div className="panel">
       <Spinner />
@@ -21,6 +21,9 @@ const Panel = ({alert, message, openPage, openDialog, openCloseBackup, openMetaM
       </Button>
       <Button variant="contained" onClick={openCloseBackup}>
         Backup
+      </Button>
+      <Button variant="contained" onClick={openLogout}>
+        Logout
       </Button>
     </div>
   )

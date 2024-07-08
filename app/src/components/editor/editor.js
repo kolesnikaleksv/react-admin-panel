@@ -62,7 +62,6 @@ export default class Editor extends Component {
     axios
       .get("./api/checkAuth.php")
       .then(res => {
-        console.log(res.data)
         this.setState({
           auth: res.data.auth
         })
@@ -332,7 +331,7 @@ export default class Editor extends Component {
           dialog={dialog}
           logout={"logout"}
           />
-          
+
         <LogoutModal
           closeModal={() => this.closeLogoutModal()} 
           openCloseLogout={openCloseLogout}
